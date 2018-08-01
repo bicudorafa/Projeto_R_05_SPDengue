@@ -27,13 +27,13 @@ Open.Dengue <- function (linha) {
   names(dengue_t) <- c('Municipio', 'Regiao', 'Casos')
   
   # Data Cleaning
-  dengue_clean <- dengue2008_t
+  dengue_clean <- dengue_t
   
   # Municipio
   dengue_clean$Municipio <- str_replace_all(dengue_clean$Municipio, '[:digit:]', '')
   
   # Regiao
-  dengue_clean$Regiao <- str_replace_all(dengue_clean$Regiao, '[:digit:]|[X.]', ' ')
+  dengue_clean$Regiao <- str_replace_all(dengue_clean$Regiao, '[:digit:]|[X.]', ' ') %>% str_trim()
   
   # Ano
   ano <- as.numeric(linha[2])
@@ -57,3 +57,10 @@ dengue_dfs_lista <- apply(dengue_lista, 1, Open.Dengue)
 
 # Juncao dos dfs
 dengue_df <- do.call(rbind, dengue_dfs_lista)
+glimpse(dengue_df)
+## EDA
+
+# Pacotes
+# Variacao dos casos do dengue por regiao
+ 
+  group_by(Regiao)
