@@ -1,29 +1,59 @@
-### Dengue
+### Mapa das Ocorrencias de Dengue (2008-2012)
 
 # Fonte: http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sinannet/cnv/dengueSP.def
+
+## Data Cleaning
+
+# Pacotes necessarios
 library(dplyr)
-
-dengue2008 <- read.csv('dengue_sp_2007.csv', sep = ';', skip = 3, stringsAsFactors = F, na.strings
-= '-', header = T, blank.lines.skip = TRUE)
-dengue2008_tbl <- dengue2008 %>% as.tbl() %>% slice(1:526)
-head(dengue2008)
-glimpse(dengue2008)
-
-# Data Cleaning
 library(tidyr)
 library(stringr)
 
-# tidy
-dengue2008_t <- dengue2008_tbl %>% 
-  select(-Total) %>% 
-  gather(key = Regiao, value = Casos, -Município.de.notificação, na.rm = T)
-names(dengue2008_t) <- c('Municipio', 'Regiao', 'Casos')
+# Funcao para abertura e limpeza das tabelas anuais
+Open.Dengue <- function (linha) {
+  
+  #Abertura do arquivo
+  nome <- as.character(linha[1])
+  dengue <- read.csv(nome, sep = ';', skip = 3, stringsAsFactors = F, na.strings
+                     = '-', header = T, blank.lines.skip = TRUE)
+  dengue_tbl <- dengue %>% as.tbl() %>% slice(1:526)
+  
+  # Data Cleaning
+  
+  # tidy
+  dengue_t <- dengue_tbl %>% 
+    select(-Total) %>% 
+    gather(key = Regiao, value = Casos, -Município.de.notificação, na.rm = T)
+  names(dengue_t) <- c('Municipio', 'Regiao', 'Casos')
+  
+  # Data Cleaning
+  dengue_clean <- dengue2008_t
+  
+  # Municipio
+  dengue_clean$Municipio <- str_replace_all(dengue_clean$Municipio, '[:digit:]', '')
+  
+  # Regiao
+  dengue_clean$Regiao <- str_replace_all(dengue_clean$Regiao, '[:digit:]|[X.]', ' ')
+  
+  # Ano
+  ano <- as.numeric(linha[2])
+  dengue_clean$Ano <- ano
+  return(dengue_clean)
+}
 
-# Data Cleaning
-dengue2008_clean <- dengue2008_t
+# Vetor com os arquivos a serem gerados 
+dengue_arquivos <- list.files(pattern = ".csv")
+dengue_arquivos
 
-# Municipio
-dengue2008_clean$Municipio <- str_replace_all(dengue2008_t$Municipio, '[:digit:]', '')
+# Vetor com os anos a serem usados na funcao
+dengue_anos <- extract_numeric(dengue_arquivos) 
 
-# Regiao
-dengue2008_clean$Regiao <- str_replace_all(dengue2008_clean$Regiao, '[:digit:]|[X.]', ' ')
+# Lista com ambos
+dengue_lista <- data.frame(df=dengue_arquivos, ano=dengue_anos, stringsAsFactors = F)
+
+# Lista com dataframes
+#teste <- Open.Dengue(dengue_lista[1, ])
+dengue_dfs_lista <- apply(dengue_lista, 1, Open.Dengue)
+
+# Juncao dos dfs
+dengue_df <- do.call(rbind, dengue_dfs_lista)
