@@ -61,6 +61,77 @@ glimpse(dengue_df)
 ## EDA
 
 # Pacotes
-# Variacao dos casos do dengue por regiao
- 
-  group_by(Regiao)
+library(ggplot2)
+library(RColorBrewer)
+
+# Plot do avanco dos casos totais ao longo dos anos <- size tá ruim
+dengue_df %>% 
+  group_by(Ano) %>%
+  summarise(Total_ano = sum(Casos)) %>% 
+  ggplot(aes(x = Ano, y = Total_ano)) +
+  geom_bar(stat="identity", width=.5, fill="tomato3") + 
+  labs(title="Série de Casos Totais Anuais", 
+       subtitle="Soma dos Casos Ocorridos no Estado por Ano", 
+       caption="Source: Ministério da Saúde", 
+       y='Total') +  # title and caption
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust=0.5),  # rotate x axis text
+        panel.grid.minor = element_blank())
+
+# Df com as regioes e a sua quantidade de casos
+dengue_df_regioes <- dengue_df %>%  
+  group_by(Regiao, Ano) %>% 
+  summarise('Total' = sum(Casos))
+
+# Df para construcao do plot comparativo de quanto as regioes estao em relacao a media e consecutivo plot
+dengue_df_m <- dengue_df_regioes %>% 
+  group_by(Regiao) %>% 
+  summarise(Media = mean(Total)) %>%
+  mutate(Media_s = scale(Media)) %>% 
+  mutate(Situacao = ifelse(Media_s > 0, 'Acima', 'Abaixo'))
+  
+dengue_df_m %>% 
+  arrange(Media) %>% 
+  mutate(Regiao = factor(Regiao, levels = Regiao,ordered = TRUE)) %>% 
+  ggplot(aes(x=Regiao, y=Media_s, label=Media_s)) + 
+  geom_bar(stat='identity', aes(fill=Situacao), width=.5)  +
+  scale_fill_manual(name="Situação em relação à Média", 
+                    labels = c("Abaixo", "Acima"), 
+                    values = c("Abaixo"="#FF0000", "Acima" = "#00ba38")) + 
+  labs(subtitle="Quais são as regiões mais críticas dos últimos anos", 
+       title= "Regiões em Relação à Média Histórica") + 
+  coord_flip() +
+  theme(axis.title.x=element_blank(),
+        axis.text.x=element_blank(),
+        axis.ticks.x=element_blank())
+
+# Df com as regioes mais críticas e plot consecutivo
+regioes_maisCasos <- dengue_df_regioes %>% 
+  group_by(Regiao) %>% 
+  summarise(Media = mean(Total)) %>% 
+  arrange(desc(Media)) %>% 
+  head(n = 7) 
+
+regioes_maisCasos %>%
+  mutate(Regiao = factor(Regiao, levels = Regiao,ordered = TRUE)) %>% 
+  ggplot(aes(x = Regiao, y = Media, fill = Regiao)) +
+  geom_bar(stat = 'identity') +
+  labs(subtitle="Quais são as regiões mais críticas dos últimos anos", 
+       title= "Regiões em Relação à Média Histórica") +
+  scale_fill_brewer(direction = -1) +
+  theme_classic() +
+  theme(axis.title.x=element_blank(),
+      axis.text.x=element_blank(),
+      axis.ticks.x=element_blank()) 
+
+# Variacao dos casos do dengue nas 6 maiores regioes e seu plot
+dengue_df_regioes %>%
+  inner_join(regioes_maisCasos) %>% 
+  ggplot(aes(x = Ano, y = Total, group = Regiao, color = Regiao)) +
+  geom_line() +
+  geom_point() +
+  labs(title="Casos das Regiões mais Críticas", 
+       subtitle="Variação do número ao longo do período analisado", 
+       y="Returns %", 
+       color=NULL) +
+  theme_bw()
