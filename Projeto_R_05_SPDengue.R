@@ -135,3 +135,28 @@ dengue_df_regioes %>%
        y="Returns %", 
        color=NULL) +
   theme_bw()
+
+## Montagem do Dashboard interativo do Estado no ano mais recente
+
+# Carregando pacotes necessários
+library(ggmap)
+library(leaflet)
+
+# Gerando os mapas de cada cidade de SP
+longlat <- geocode(unique(dengue_df$Regiao)) %>% 
+  mutate(loc = unique(dengue_df$Regiao)) 
+
+# Criacao do df com ano mais recente e geolocalizacoes obtidas
+dengue_df %>% 
+  filter(Ano == max(unique(dengue_df$Ano))) %>% 
+  inner_join(longlat, by = c("Regiao" = "loc")) %>% 
+  mutate(LatLon = paste(lat, lon, sep = ":")) -> criacao_mapa
+
+# Formatando a saída e gerando um movo dataframe chamado long_formapping
+num_de_vezes_repetir <- criacao_mapa$Casos
+criacao_mapa <- criacao_mapa[rep(seq_len(nrow(criacao_mapa)),
+                                  num_de_vezes_repetir),]
+# Gerando o mapa com o dataframe
+leaflet(criacao_mapa) %>% 
+  addTiles() %>% 
+  addMarkers(clusterOptions = markerClusterOptions())
