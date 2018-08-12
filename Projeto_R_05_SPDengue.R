@@ -58,13 +58,15 @@ dengue_dfs_lista <- apply(dengue_lista, 1, Open.Dengue)
 # Juncao dos dfs
 dengue_df <- do.call(rbind, dengue_dfs_lista)
 glimpse(dengue_df)
+
+
 ## EDA
 
 # Pacotes
 library(ggplot2)
 library(RColorBrewer)
 
-# Plot do avanco dos casos totais ao longo dos anos <- size tá ruim
+# Plot 1 do avanco dos casos totais ao longo dos anos <- size tá ruim
 dengue_df %>% 
   group_by(Ano) %>%
   summarise(Total_ano = sum(Casos)) %>% 
@@ -74,16 +76,16 @@ dengue_df %>%
        subtitle="Soma dos Casos Ocorridos no Estado por Ano", 
        caption="Source: Ministério da Saúde", 
        y='Total') +  # title and caption
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust=0.5),  # rotate x axis text
-        panel.grid.minor = element_blank())
+  theme_bw() #+
+ # theme(axis.text.x = element_text(angle = 90, vjust=0.5),  # rotate x axis text
+ #       panel.grid.minor = element_blank())
 
 # Df com as regioes e a sua quantidade de casos
 dengue_df_regioes <- dengue_df %>%  
   group_by(Regiao, Ano) %>% 
   summarise('Total' = sum(Casos))
 
-# Df para construcao do plot comparativo de quanto as regioes estao em relacao a media e consecutivo plot
+# Df para construcao do plot comparativo de quanto as regioes estao em relacao a media e consecutivo plot 2
 dengue_df_m <- dengue_df_regioes %>% 
   group_by(Regiao) %>% 
   summarise(Media = mean(Total)) %>%
@@ -105,7 +107,7 @@ dengue_df_m %>%
         axis.text.x=element_blank(),
         axis.ticks.x=element_blank())
 
-# Df com as regioes mais críticas e plot consecutivo
+# Df com as regioes mais críticas e plot 3 consecutivo
 regioes_maisCasos <- dengue_df_regioes %>% 
   group_by(Regiao) %>% 
   summarise(Media = mean(Total)) %>% 
@@ -124,15 +126,14 @@ regioes_maisCasos %>%
       axis.text.x=element_blank(),
       axis.ticks.x=element_blank()) 
 
-# Variacao dos casos do dengue nas 6 maiores regioes e seu plot
+# Variacao dos casos do dengue nas 6 maiores regioes e seu plot 4 
 dengue_df_regioes %>%
   inner_join(regioes_maisCasos) %>% 
   ggplot(aes(x = Ano, y = Total, group = Regiao, color = Regiao)) +
   geom_line() +
   geom_point() +
   labs(title="Casos das Regiões mais Críticas", 
-       subtitle="Variação do número ao longo do período analisado", 
-       y="Returns %", 
+       subtitle="Variação do número ao longo do período analisado",
        color=NULL) +
   theme_bw()
 
@@ -142,21 +143,25 @@ dengue_df_regioes %>%
 library(ggmap)
 library(leaflet)
 
+# df para geracao do dashboard
+dengue_df_dashB <- dengue_df_regioes %>% 
+  filter(Ano == max(unique(dengue_df_regioes$Ano)))
+
 # Gerando os mapas de cada cidade de SP
-longlat <- geocode(unique(dengue_df$Regiao)) %>% 
-  mutate(loc = unique(dengue_df$Regiao)) 
+longlat <- geocode(dengue_df_dashB$Regiao) %>% 
+  mutate(loc = unique(dengue_df_regioes$Regiao)) 
 
 # Criacao do df com ano mais recente e geolocalizacoes obtidas
-dengue_df %>% 
-  filter(Ano == max(unique(dengue_df$Ano))) %>% 
-  inner_join(longlat, by = c("Regiao" = "loc")) %>% 
+dengue_df_dashB  %>% 
+  left_join(longlat, by = c("Regiao" = "loc")) %>% 
   mutate(LatLon = paste(lat, lon, sep = ":")) -> criacao_mapa
 
 # Formatando a saída e gerando um movo dataframe chamado long_formapping
-num_de_vezes_repetir <- criacao_mapa$Casos
+num_de_vezes_repetir <- criacao_mapa$Total
 criacao_mapa <- criacao_mapa[rep(seq_len(nrow(criacao_mapa)),
                                   num_de_vezes_repetir),]
+
 # Gerando o mapa com o dataframe
-leaflet(criacao_mapa) %>% 
+leaflet(criacao_mapa_limpo) %>% 
   addTiles() %>% 
   addMarkers(clusterOptions = markerClusterOptions())
