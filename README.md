@@ -1,4 +1,4 @@
-# Projeto_R_05_SPDengue
+# Projeto_R_DengueSP_Viz
 O objetivo deste trabalho é demonstrar como construir um gerador de dashboard a partir de uma série de inputs de uma fonte dados comum. No caso, usaram-se informações obtidas no "datasus", portal oficial de dados do Sistema Único de Saúde do governo brasileiro (http://tabnet.datasus.gov.br/cgi/deftohtm.exe?sinannet/cnv/dengueSP.def), sobre as ocorrências de dengue no estado de SP.
 
 # Instruções
